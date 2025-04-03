@@ -78,7 +78,7 @@ connection.commit()
 
 with connection.cursor() as cursor:
         # Read a single record
-        sql = "SELECT * FROM activeusers WHERE NFCUID = %s"         #cursor.execute(sql, ('temp@localhost',))
+        sql = "SELECT * FROM activeusers WHERE NFCUID = %s"   
         cursor.execute(sql,output)
         result = cursor.fetchone()
         print(result)
