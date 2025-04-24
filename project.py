@@ -37,7 +37,7 @@ connection = pymysql.connect(host='100.102.124.81',
                              autocommit=True)
 connection.commit()
 
-
+userIn = ''
 while True:
     userIn = input("enter char (read(r)/insert(i)): ")
     if userIn == 'i':
@@ -55,23 +55,23 @@ print("Waiting for RFID/NFC card...")
 while True:
     # Check if a card is available to read
     uid = pn532.read_passive_target(timeout=0.5)
-    
+
     print(".", end="")
     # Try again if no card is available.
     if uid is None:
         continue
     output = ""
     print("Found card with UID:", [hex(i)[2:] for i in uid])
-    
+
     for i in uid:
         temp = hex(i)[2:]
         if(len(temp) < 2):
             temp = "0" + temp
-        
+
         output += temp
 
     print(output)
-    
+
     #print("total space on card: " + str(count*4))
     print('****')
     time.sleep(2)
@@ -81,23 +81,38 @@ while True:
 
 
 #
-query_result = ''
-with connection.cursor() as cursor:
+def scanCard():
+    query_result = ''
+    with connection.cursor() as cursor:
+            # Read a single record
+            sql = "SELECT * FROM activeusers WHERE NFCUID = %s"
+            cursor.execute(sql,output)
+            result = cursor.fetchone()
+            print(result)
+            query_result = result
+
+
+            #if user exists in DB and scans, then log the entry with timestamp in db
+            if(query_result is not None):
+                sql = "insert into logins(uid) values(%s)"
+                cursor.execute(sql,query_result.get("uid"))
+                print(query_result.get("uid"))
+
+
+
+def inserCardData():
+    with connection.cursor() as cursor:
         # Read a single record
-        sql = "SELECT * FROM activeusers WHERE NFCUID = %s"   
-        cursor.execute(sql,output)
+        sql = "SELECT * FROM activeusers WHERE NFCUID = %s"
+        cursor.execute(sql, output)
         result = cursor.fetchone()
         print(result)
         query_result = result
-        
 
-        #if user exists in DB and scans, then log the entry with timestamp in db
-        if(query_result is not None):
-            sql = "insert into logins(uid) values(%s)"
-            cursor.execute(sql,query_result.get("uid"))
+        # if user exists in DB and scans, then log the entry with timestamp in db
+        if (query_result is None):
+            sql = "insert into activeUsers(uid) values(%s)"
+            cursor.execute(sql, output, input("enter name of new user"))
             print(query_result.get("uid"))
-
-
-
-
-
+        else:
+            print("user already exists")
