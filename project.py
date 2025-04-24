@@ -78,6 +78,9 @@ while True:
     break;
 
 
+
+
+#
 query_result = ''
 with connection.cursor() as cursor:
         # Read a single record
@@ -86,7 +89,8 @@ with connection.cursor() as cursor:
         result = cursor.fetchone()
         print(result)
         query_result = result
-
+        
+        #if user exists in DB and scans, then log the entry with timestamp in db
         if(query_result is not None):
             sql = "insert into logins(uid) values(%s)"
             cursor.execute(sql,query_result.get("uid"))
