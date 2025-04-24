@@ -90,6 +90,7 @@ with connection.cursor() as cursor:
         print(result)
         query_result = result
         
+
         #if user exists in DB and scans, then log the entry with timestamp in db
         if(query_result is not None):
             sql = "insert into logins(uid) values(%s)"
