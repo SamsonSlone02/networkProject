@@ -26,6 +26,18 @@ print("Found PN532 with firmware version: {0}.{1}".format(ver, rev))
 # Configure PN532 to communicate with MiFare cards
 pn532.SAM_configuration()
 
+
+print("connecting . . .")
+connection = pymysql.connect(host='100.102.124.81',
+                             user='temp',
+                             password='Password',
+                             database='temp',
+                             charset='utf8mb4',
+                             cursorclass=pymysql.cursors.DictCursor,
+                             autocommit=True)
+connection.commit()
+
+
 while True:
     userIn = input("enter char (read(r)/insert(i)): ")
     if userIn == 'i':
@@ -65,27 +77,20 @@ while True:
     time.sleep(2)
     break;
 
-connection = pymysql.connect(host='100.102.124.81',
-                             user='temp',
-                             password='Password',
-                             database='temp',
-                             charset='utf8mb4',
-                             cursorclass=pymysql.cursors.DictCursor)
 
-connection.commit()
-
-
-
+query_result = ''
 with connection.cursor() as cursor:
         # Read a single record
         sql = "SELECT * FROM activeusers WHERE NFCUID = %s"   
         cursor.execute(sql,output)
         result = cursor.fetchone()
         print(result)
+        query_result = result
 
-
-
-
+        if(query_result is not None):
+            sql = "insert into logins(uid) values(%s)"
+            cursor.execute(sql,query_result.get("uid"))
+            print(query_result.get("uid"))
 
 
 
