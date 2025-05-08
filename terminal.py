@@ -1,3 +1,5 @@
+#written by samson
+
 import time
 import board
 import busio
@@ -5,6 +7,7 @@ from digitalio import DigitalInOut
 import os
 from adafruit_pn532.i2c import PN532_I2C
 import pymysql.cursors
+
 
 from sync import syncToOffline
 import sqlite3
@@ -29,24 +32,8 @@ print("Found PN532 with firmware version: {0}.{1}".format(ver, rev))
 # Configure PN532 to communicate with MiFare cards
 pn532.SAM_configuration()
 
-print("connecting . . .")
-
-online = True
-try:
-    
-    conn_mariadb = pymysql.connect(host='100.102.124.80',user='temp',password='Password',database='temp',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor,autocommit=True)
-    #conn_mariadb = pymysql.connect(host='100.102.124.81',user='temp',password='Password',database='temp',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor,autocommit=True)
-    conn_mariadb.commit()
-    print("work")    
-except:
-    #print(a)
-    online = False
-    print("unable to connect to main, using offline db")
-    conn_sqlite = sqlite3.connect("offline.db")
-    print("done")
-
-
-def onlineScanCard():
+def onlineScanCard(db_conn):
+    conn_mariadb = db_conn
     output = ""
     print("now reading . . .")
     print("Waiting for RFID/NFC card...")
@@ -87,14 +74,16 @@ def onlineScanCard():
 
 
             #if user exists in DB and scans, then log the entry with timestamp in db
+           
             if(query_result is not None):
                 sql = "insert into logins(uid) values(%s)"
                 cursor_mariadb.execute(sql,query_result.get("uid"))
                 print(query_result.get("uid"))
+    
 
 
-
-def offlineScanCard():
+def offlineScanCard(db_conn):
+    conn_sqlite = db_conn
     output = ""
     print("now reading . . .")
     print("Waiting for RFID/NFC card...")
@@ -189,22 +178,42 @@ def insertCardData():
         else:
             print("user already exists")
 
-userIn = ''
-userIn = input("enter char (read(r)/insert(i)): ")
-while True:
-    if userIn == 'i':
-        #print("inserting data has not been added yet. Quitting...")
-        #exit()
-        insertCardData()
-        break;
-    if userIn == 'r':
-        if online:
-            syncToOffline()
-            onlineScanCard()
-        else:
-            offlineScanCard()
-        #break
+
+
+def main():
+    print("connecting . . .")
+    online = True
+
+    try:
+        #conn_mariadb = pymysql.connect(host='100.102.124.80',user='temp',password='Password',database='temp',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor,autocommit=True)
+        conn_mariadb = pymysql.connect(host='100.102.124.81',user='temp',password='Password',database='temp',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor,autocommit=True)
+        conn_mariadb.commit()
+        print("work")    
+    except:
+        #print(a)
+        online = False
+        print("unable to connect to main, using offline db")
+        conn_sqlite = sqlite3.connect("offline.db")
+        print("done")
+
+
+    userIn = ''
+    userIn = input("enter char (read(r)/insert(i)): ")
+    while True:
+        if userIn == 'i':
+            #print("inserting data has not been added yet. Quitting...")
+            #exit()
+            insertCardData()
+            break;
+        if userIn == 'r':
+            if online:
+                syncToOffline()
+                onlineScanCard(conn_mariadb)
+            else:
+                offlineScanCard(conn_sqlite)
+            #break
 
 
 
-#
+if __name__ == '__main__':
+    main()
