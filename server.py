@@ -1,7 +1,7 @@
 import asyncio
 import websockets
 
-async def handler(websocket, path):
+async def handler(websocket):
     client_ip = websocket.remote_address[0]
     print(f"Connected: {client_ip}")
 
